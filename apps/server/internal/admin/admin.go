@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"rcontrol-server/internal/config"
@@ -14,6 +15,9 @@ import (
 
 //go:embed index.html
 var assets embed.FS
+
+//go:embed lang/*.json
+var langs embed.FS
 
 // Auth is the credential store.
 type Auth interface {
@@ -59,6 +63,30 @@ func Serve(addr string, d Deps) (*http.Server, error) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(b)
 	})
+	mux.HandleFunc("/api/i18n", func(w http.ResponseWriter, r *http.Request) {
+		lang := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("lang")))
+		if len(lang) != 2 {
+			lang = "en"
+		}
+		for _, c := range lang {
+			if c < 'a' || c > 'z' {
+				lang = "en"
+				break
+			}
+		}
+		b, err := langs.ReadFile("lang/" + lang + ".json")
+		if err != nil {
+			b, err = langs.ReadFile("lang/en.json")
+		}
+		if err != nil {
+			jsonOut(w, 500, map[string]any{"error": "no language files"})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "max-age=3600")
+		_, _ = w.Write(b)
+	})
+
 	mux.HandleFunc("/api/state", func(w http.ResponseWriter, r *http.Request) {
 		jsonOut(w, 200, d.state())
 	})

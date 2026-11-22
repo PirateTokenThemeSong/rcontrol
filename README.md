@@ -53,8 +53,9 @@ The server puts an icon in the notification area:
 The settings page covers status (every interface address — LAN, Tailscale, etc.
 — listed with a copy button), the pairing PIN (show / rotate), unpairing all
 devices, the server port (save & restart), start at login, the data folder and
-Exit. Anything that survives restarts lives in
-`~/.rcontrol/config.json`. Windows 11 may tuck new tray icons under the `^`
+Exit. The page follows the browser language (English/Italian) — strings live in
+`apps/server/internal/admin/lang/*.json`, one file per language. Anything that
+survives restarts lives in `~/.rcontrol/config.json`. Windows 11 may tuck new tray icons under the `^`
 overflow — drag it onto the taskbar to pin it.
 
 ### 2. Android app

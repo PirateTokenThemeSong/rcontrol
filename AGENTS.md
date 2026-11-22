@@ -13,7 +13,9 @@ No cloud, no TLS in v1.
 - `apps/server/internal/tray` — Windows notification-area icon (left click =
   settings, right click = menu with Exit).
 - `apps/server/internal/admin` — loopback settings UI (`127.0.0.1:7948`) and
-  its API; keep it bound to loopback only.
+  its API; keep it bound to loopback only. UI strings live in
+  `internal/admin/lang/<code>.json` (en, it) — add a file for a new language and
+  it is picked up by `/api/i18n`.
 - `apps/android/` — one Gradle module `:app`, Jetpack Compose UI.
 - `protocol/PROTOCOL.md` — wire protocol; the source of truth. Update it with
   any endpoint or message change.
