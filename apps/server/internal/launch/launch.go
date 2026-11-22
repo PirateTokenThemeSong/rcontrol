@@ -12,6 +12,7 @@ package launch
 
 import (
 	"encoding/json"
+	"sync"
 	"fmt"
 	"io/fs"
 	"os"
@@ -40,6 +41,8 @@ type def struct {
 
 // Service launches allowlisted and Start Menu apps.
 type Service struct {
+	mu        sync.RWMutex
+	path      string
 	apps      map[string]def
 	startDirs []string
 }
@@ -108,11 +111,13 @@ func LoadOrSample(path string) (*Service, error) {
 	if parsed == nil {
 		parsed = map[string]def{}
 	}
-	return &Service{apps: parsed, startDirs: defaultStartDirs()}, nil
+	return &Service{path: path, apps: parsed, startDirs: defaultStartDirs()}, nil
 }
 
 // List returns the allowlisted apps sorted by id (labels only — no paths).
 func (s *Service) List() []App {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	out := make([]App, 0, len(s.apps))
 	for id, d := range s.apps {
 		label := d.Label
@@ -167,7 +172,10 @@ func (s *Service) Search(q string) []App {
 // Unknown ids, and paths escaping the Start Menu dirs, are rejected.
 func (s *Service) Run(id string) error {
 	id = strings.TrimSpace(id)
-	if d, ok := s.apps[id]; ok {
+	s.mu.RLock()
+	d, ok := s.apps[id]
+	s.mu.RUnlock()
+	if ok {
 		return s.runDef(id, d)
 	}
 	if strings.HasPrefix(id, startMenuPrefix) {
@@ -240,7 +248,10 @@ func (s *Service) runStartMenu(path string) error {
 // so callers can read its icon. Unknown ids return ok=false.
 func (s *Service) PathFor(id string) (string, bool) {
 	id = strings.TrimSpace(id)
-	if d, ok := s.apps[id]; ok {
+	s.mu.RLock()
+	d, ok := s.apps[id]
+	s.mu.RUnlock()
+	if ok {
 		var cmd string
 		switch runtime.GOOS {
 		case "windows":
@@ -270,3 +281,25 @@ func (s *Service) PathFor(id string) (string, bool) {
 	}
 	return "", false
 }
+
+// Reload re-reads the allowlist file after an edit.
+func (s *Service) Reload() error {
+	raw, err := os.ReadFile(s.path)
+	if err != nil {
+		return err
+	}
+	var parsed map[string]def
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return err
+	}
+	if parsed == nil {
+		parsed = map[string]def{}
+	}
+	s.mu.Lock()
+	s.apps = parsed
+	s.mu.Unlock()
+	return nil
+}
+
+// Path returns the allowlist file path.
+func (s *Service) Path() string { return s.path }

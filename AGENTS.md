@@ -10,6 +10,10 @@ No cloud, no TLS in v1.
 
 - `apps/server/` — Go module `rcontrol-server`; `cmd/rcontrol-unlock` is the
   optional SYSTEM helper that types into the lock screen.
+- `apps/server/internal/tray` — Windows notification-area icon (left click =
+  settings, right click = menu with Exit).
+- `apps/server/internal/admin` — loopback settings UI (`127.0.0.1:7948`) and
+  its API; keep it bound to loopback only.
 - `apps/android/` — one Gradle module `:app`, Jetpack Compose UI.
 - `protocol/PROTOCOL.md` — wire protocol; the source of truth. Update it with
   any endpoint or message change.

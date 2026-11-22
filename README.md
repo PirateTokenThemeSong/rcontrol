@@ -43,6 +43,19 @@ launches via `POST /launch` or WS `{"type":"launch","app":"steam"}`.
 Windows power actions use `shutdown /s /t 5`, `/r`, `rundll32 powrprof.dll,SetSuspendState`, `rundll32 user32.dll,LockWorkStation`.
 Linux uses `systemctl poweroff/reboot/suspend`, `loginctl lock-session`.
 
+### Tray & settings (Windows)
+
+The server puts an icon in the notification area:
+
+- **left click** → opens the local settings page (`http://127.0.0.1:7948`)
+- **right click** → Settings…, Open data folder, Exit
+
+The settings page covers status, the pairing PIN (show / rotate), unpairing all
+devices, the apps allowlist editor, the server port (save & restart), start at
+login, the data folder and Exit. Anything that survives restarts lives in
+`~/.rcontrol/config.json`. Windows 11 may tuck new tray icons under the `^`
+overflow — drag it onto the taskbar to pin it.
+
 ### 2. Android app
 
 Open `apps/android` in Android Studio (Hedgehog+), run on a physical device
