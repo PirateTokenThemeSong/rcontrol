@@ -194,7 +194,7 @@ func (d Deps) state() map[string]any {
 		"host":    d.HostName,
 		"version": d.Version,
 		"port":    d.Port,
-		"uptime":  time.Since(d.Started).Round(time.Second).String(),
+		"uptimeSeconds": int64(time.Since(d.Started).Seconds()),
 		"pin":       d.Auth.PIN(),
 		"startup":   d.Startup != nil && d.Startup.Enabled(),
 		"dataDir":   d.DataDir,
