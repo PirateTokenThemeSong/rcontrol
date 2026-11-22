@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"math"
 	"runtime"
 	"sync"
 	"syscall"
@@ -314,8 +315,26 @@ func iconFromPNG(b []byte) uintptr {
 		return systemIcon()
 	}
 	const s = 32
+	const pad = 1
 	dst := image.NewRGBA(image.Rect(0, 0, s, s))
-	xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), xdraw.Over, nil)
+	// The launcher artwork has a wide safe-zone margin. Crop to the visible
+	// pixels so the tray icon fills the notification area like its neighbours.
+	box := alphaBounds(src)
+	bw, bh := box.Dx(), box.Dy()
+	if bw <= 0 || bh <= 0 {
+		box, bw, bh = src.Bounds(), src.Bounds().Dx(), src.Bounds().Dy()
+	}
+	inner := float64(s - pad*2)
+	scale := math.Min(inner/float64(bw), inner/float64(bh))
+	w, h := int(float64(bw)*scale), int(float64(bh)*scale)
+	if w < 1 {
+		w = 1
+	}
+	if h < 1 {
+		h = 1
+	}
+	ox, oy := (s-w)/2, (s-h)/2
+	xdraw.CatmullRom.Scale(dst, image.Rect(ox, oy, ox+w, oy+h), src, box, xdraw.Over, nil)
 
 	screen, _, _ := procGetDC.Call(0)
 	if screen == 0 {
@@ -345,19 +364,49 @@ func iconFromPNG(b []byte) uintptr {
 	}
 	mask, _, _ := procCreateBitmap.Call(s, s, 1, 1, 0)
 	ii := iconInfo{FIcon: 1, HbmMask: mask, HbmColor: hbm}
-	h, _, _ := procCreateIconIndirect.Call(uintptr(unsafe.Pointer(&ii)))
+	hic, _, _ := procCreateIconIndirect.Call(uintptr(unsafe.Pointer(&ii)))
 	procDeleteObject.Call(hbm)
 	if mask != 0 {
 		procDeleteObject.Call(mask)
 	}
-	if h == 0 {
+	if hic == 0 {
 		return systemIcon()
 	}
-	return h
+	return hic
 }
 
 func systemIcon() uintptr {
 	const idiApplication = 32512
 	h, _, _ := procLoadIconW.Call(0, idiApplication)
 	return h
+}
+
+// alphaBounds is the bounding box of non-transparent pixels.
+func alphaBounds(img image.Image) image.Rectangle {
+	b := img.Bounds()
+	minX, minY, maxX, maxY := b.Max.X, b.Max.Y, b.Min.X, b.Min.Y
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			_, _, _, a := img.At(x, y).RGBA()
+			if a <= 0x1000 {
+				continue
+			}
+			if x < minX {
+				minX = x
+			}
+			if y < minY {
+				minY = y
+			}
+			if x+1 > maxX {
+				maxX = x + 1
+			}
+			if y+1 > maxY {
+				maxY = y + 1
+			}
+		}
+	}
+	if minX >= maxX || minY >= maxY {
+		return b
+	}
+	return image.Rect(minX, minY, maxX, maxY)
 }
