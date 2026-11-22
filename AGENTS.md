@@ -54,6 +54,16 @@ reachable from the emulator at `10.0.2.2`.
 - **Secrets:** never commit `~/.rcontrol`, the pairing PIN, tokens, or
   `%ProgramData%\rcontrol`. The repo must build from a clean checkout.
 
+## Documentation (keep it split)
+
+- `README.md` is a landing page: what it is, features, links. No instructions,
+  no build commands, no protocol details.
+- `docs/` is the user manual (`getting-started`, `server`, `android`,
+  `troubleshooting`) — everything a user might want.
+- `docs/internal/` is for contributors (`architecture`, `build`, CI); the wire
+  format stays in `protocol/PROTOCOL.md`.
+- Update the matching doc whenever behaviour changes; do not grow the README.
+
 ## Workflow (required)
 
 After **every** change:

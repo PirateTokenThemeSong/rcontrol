@@ -1,110 +1,44 @@
-# rcontrol — LAN PC remote (monorepo)
+<p align="center">
+  <img src="brand/ic_launcher_rounded_512.png" width="104" alt="rcontrol">
+</p>
 
-Native Android app + Go PC server. LAN only, v1 scope: **screen streaming + power actions**.
+<h1 align="center">rcontrol</h1>
 
-```
-rcontrol/
-  apps/server/    Go server — runs on your PC (Windows/Linux), captures screen, executes power actions
-  apps/android/   Native Android — Kotlin + Jetpack Compose, live screen + power buttons
-  protocol/       Shared wire protocol (single source of truth)
-```
+<p align="center">Your PC, from your pocket.</p>
 
-## Quick start
+A LAN-only remote for Windows: live screen, power, open windows, apps and remote
+unlock, from a native Android app. No cloud, no accounts, no port forwarding —
+the phone talks straight to your PC on the same Wi-Fi (or over Tailscale).
 
-### 1. PC server (Go 1.22+)
+## What it does
 
-```powershell
-cd apps/server
-go mod tidy
-go run . --port 7945
-# first run prints a pairing PIN, e.g. 482-913
-# POST /pair with the PIN to get a token, or pass --no-auth for home LAN testing
-go run . --port 7945 --no-auth
-```
+- **Live screen** — the desktop streamed to your phone at 1–15 fps, scaled to
+  whatever your connection can carry.
+- **Power** — shut down, reboot, sleep, lock, or turn the displays off.
+- **Windows** — every open window on the PC, one tap to bring it to the front.
+- **Apps** — search the Start Menu and launch anything, or pin your favourites.
+- **Unlock** — when Windows is locked, type the PIN/password from the phone.
+- **Wake** — magic packet from the phone, or any HTTP endpoint (router, Home
+  Assistant, a Pi) before it starts knocking on `/health`.
+- **Tray + settings** — a tray icon on the PC opens a local settings page for
+  the pairing PIN, port, start-at-login and more.
 
-Build a single binary:
+## Get started
 
-```powershell
-go build -o bin/rcontrol-server.exe .
-.\bin\rcontrol-server.exe --port 7945
-```
+Download the latest [release](https://github.com/PirateTokenThemeSong/rcontrol/releases),
+run the server on the PC, install the APK on the phone, pair with the PIN.
 
-Run the API tests (httptest-based e2e, no real shutdowns/launches — side
-effects are stubbed):
+→ [Getting started](docs/getting-started.md)
 
-```powershell
-go test ./...
-```
+## Documentation
 
-Allowlisted apps (`~/.rcontrol/apps.json`, sample auto-created — edit it to
-add your programs, e.g. Steam, Kodi). Phone lists them via `GET /apps` and
-launches via `POST /launch` or WS `{"type":"launch","app":"steam"}`.
+- [Server guide](docs/server.md) — tray, settings, power, windows, apps, unlock
+- [Android guide](docs/android.md) — screens, pairing, stream quality, wake
+- [Troubleshooting](docs/troubleshooting.md)
+- [Internal docs](docs/internal/architecture.md) — architecture, build, CI,
+  protocol notes (see also [`protocol/PROTOCOL.md`](protocol/PROTOCOL.md))
 
-Windows power actions use `shutdown /s /t 5`, `/r`, `rundll32 powrprof.dll,SetSuspendState`, `rundll32 user32.dll,LockWorkStation`.
-Linux uses `systemctl poweroff/reboot/suspend`, `loginctl lock-session`.
+## Status
 
-### Tray & settings (Windows)
-
-The server puts an icon in the notification area:
-
-- **left click** → opens the local settings page (`http://127.0.0.1:7948`)
-- **right click** → Settings…, Open data folder, Exit
-
-The settings page covers status (every interface address — LAN, Tailscale, etc.
-— listed with a copy button), the pairing PIN (show / rotate), unpairing all
-devices, the server port (save & restart), start at login, the data folder and
-Exit. The page follows the browser language (English/Italian) — strings live in
-`apps/server/internal/admin/lang/*.json`, one file per language. Anything that
-survives restarts lives in `~/.rcontrol/config.json`. Windows 11 may tuck new tray icons under the `^`
-overflow — drag it onto the taskbar to pin it.
-
-### 2. Android app
-
-Open `apps/android` in Android Studio (Hedgehog+), run on a physical device
-on the **same Wi-Fi** as your PC. The first screen is action-only: tap **Set
-up PC** (gear icon) once to enter the address / token or pair with the PIN,
-then **Connect** or **Wake**. Screen quality and all wake options also live
-in Settings — the main screens never ask you to type config.
-
-## Protocol (v1)
-
-See [`protocol/PROTOCOL.md`](protocol/PROTOCOL.md). Summary:
-
-- Discovery: UDP broadcast port `7946` — client sends `RC_DISCOVER`, server replies JSON.
-- Pairing: `POST /pair {"pin":"482-913"}` → `{"token":"..."}`
-- Open windows: `GET /windows` + `POST /focus` (focus switcher, Windows v1)
-- Locked session: `GET /lockstate`, `POST /unlock` (needs the optional SYSTEM helper, see `protocol/PROTOCOL.md` §9)
-- Streaming + control: `GET /ws?token=...` (WebSocket)
-  - Server → client: binary JPEG frames (decode with `BitmapFactory`)
-  - Client → server JSON: `{"type":"power","action":"shutdown|reboot|sleep|lock"}`, `{"type":"quality","fps":5,"jpeg":70}`, `{"type":"launch","app":"steam"}`, `{"type":"windows"}`, `{"type":"focus","id":"…"}`, `{"type":"ping"}`
-- Health: `GET /health`
-
-## Releases & nightlies
-
-- **Release** — pushing a tag `v*` runs `.github/workflows/release.yml`: tests,
-  builds `rcontrol-server.exe` + `rcontrol-unlock.exe` (windows/amd64, zipped)
-  and the APK, then publishes them on the GitHub release.
-
-  ```
-  git tag v0.1.0
-  git push origin v0.1.0
-  ```
-
-- **Nightly** — `.github/workflows/nightly.yml` runs at 03:00 UTC (and on
-  demand): same builds, uploaded as the `rcontrol-nightly` workflow artifact
-  with 14-day retention. No release is created.
-
-The APK in both is **debug-signed** (no keystore in the repo), so installing
-over a build from another runner may require uninstalling first. Add a keystore
-plus secrets and a `signingConfig` when you want proper release signing.
-
-## Repo layout / tooling
-
-- No JS toolchain at root — each app builds with its native toolchain.
-- `make server` / `make android-debug` shortcuts in `Makefile` (optional).
-
-## Security notes (LAN v1)
-
-- Token auth on HTTP+WS. For home LAN, `--no-auth` is fine for testing.
-- No TLS in v1 (LAN only). Don't expose port `7945` to the internet.
-- V2 ideas: TLS + per-device certs, mouse/keyboard HID, WebRTC, relay for remote access.
+Early days: **v0.1.0**, Windows-first, Android-only, no TLS (LAN trust model).
+Releases ship a debug-signed APK for now.
