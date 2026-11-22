@@ -5,13 +5,8 @@ package admin
 import (
 	"embed"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net"
 	"net/http"
-	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"rcontrol-server/internal/config"
@@ -25,12 +20,6 @@ type Auth interface {
 	PIN() string
 	RotatePIN() (string, error)
 	RotateToken() (string, error)
-}
-
-// Launcher exposes the apps allowlist file.
-type Launcher interface {
-	Path() string
-	Reload() error
 }
 
 // Startup controls the login entry.
@@ -47,7 +36,6 @@ type Deps struct {
 	Started    time.Time
 	DataDir    string
 	Auth       Auth
-	Launcher   Launcher
 	Helper     func() bool
 	Startup    Startup
 	Quit       func()
@@ -96,40 +84,6 @@ func Serve(addr string, d Deps) (*http.Server, error) {
 			return
 		}
 		jsonOut(w, 200, map[string]any{"ok": true})
-	})
-	mux.HandleFunc("/api/apps", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			jsonOut(w, 405, map[string]any{"error": "POST only"})
-			return
-		}
-		var body struct {
-			JSON string `json:"json"`
-		}
-		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&body); err != nil {
-			jsonOut(w, 400, map[string]any{"error": "bad request"})
-			return
-		}
-		var check map[string]struct {
-			Label   string   `json:"label"`
-			Windows string   `json:"windows"`
-			Linux   string   `json:"linux"`
-			Darwin  string   `json:"darwin"`
-			Args    []string `json:"args"`
-			Dir     string   `json:"dir"`
-		}
-		if err := json.Unmarshal([]byte(body.JSON), &check); err != nil {
-			jsonOut(w, 400, map[string]any{"error": "invalid JSON: " + err.Error()})
-			return
-		}
-		if err := os.WriteFile(d.Launcher.Path(), []byte(body.JSON), 0o600); err != nil {
-			jsonOut(w, 500, map[string]any{"error": err.Error()})
-			return
-		}
-		if err := d.Launcher.Reload(); err != nil {
-			jsonOut(w, 500, map[string]any{"error": err.Error()})
-			return
-		}
-		jsonOut(w, 200, map[string]any{"ok": true, "count": len(check)})
 	})
 	mux.HandleFunc("/api/startup", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -212,27 +166,31 @@ func (d Deps) state() map[string]any {
 		"host":    d.HostName,
 		"version": d.Version,
 		"port":    d.Port,
-		"addr":    localIP(),
+		"addr":    preferredIP(),
 		"uptime":  time.Since(d.Started).Round(time.Second).String(),
-		"pin":     d.Auth.PIN(),
-		"startup": d.Startup != nil && d.Startup.Enabled(),
-		"dataDir": d.DataDir,
-		"helper":  d.Helper != nil && d.Helper(),
-	}
-	if apps, err := os.ReadFile(d.Launcher.Path()); err == nil {
-		s["appsJson"] = string(apps)
-	} else {
-		s["appsJson"] = "{}"
+		"pin":       d.Auth.PIN(),
+		"startup":   d.Startup != nil && d.Startup.Enabled(),
+		"dataDir":   d.DataDir,
+		"helper":    d.Helper != nil && d.Helper(),
+		"addresses": addresses(),
 	}
 	return s
 }
 
-func localIP() string {
+// Addr is one IPv4 address the server can be reached on.
+type Addr struct {
+	Name string `json:"name"`
+	IP   string `json:"ip"`
+	Kind string `json:"kind"`
+}
+
+// addresses lists every non-loopback IPv4 interface, LAN first.
+func addresses() []Addr {
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return ""
+		return nil
 	}
-	var fallback string
+	var lan, tailscale, other []Addr
 	for _, i := range ifaces {
 		if i.Flags&net.FlagUp == 0 || i.Flags&net.FlagLoopback != 0 {
 			continue
@@ -252,22 +210,29 @@ func localIP() string {
 			if ip == nil || ip.To4() == nil {
 				continue
 			}
-			// 100.64.0.0/10 is Tailscale/CGNAT: not the LAN address a phone can use.
-			if ip[12] == 100 && ip[13] >= 64 && ip[13] <= 127 {
-				if fallback == "" {
-					fallback = ip.String()
-				}
-				continue
-			}
-			if ip.IsPrivate() {
-				return ip.String()
-			}
-			if fallback == "" {
-				fallback = ip.String()
+			entry := Addr{Name: i.Name, IP: ip.String(), Kind: "other"}
+			switch {
+			case ip[12] == 100 && ip[13] >= 64 && ip[13] <= 127:
+				entry.Kind = "tailscale"
+				tailscale = append(tailscale, entry)
+			case ip.IsPrivate():
+				entry.Kind = "lan"
+				lan = append(lan, entry)
+			default:
+				other = append(other, entry)
 			}
 		}
 	}
-	return fallback
+	return append(append(lan, tailscale...), other...)
+}
+
+// preferredIP is the address shown by default (the first LAN one).
+func preferredIP() string {
+	list := addresses()
+	if len(list) == 0 {
+		return ""
+	}
+	return list[0].IP
 }
 
 func jsonOut(w http.ResponseWriter, code int, v any) {
@@ -275,12 +240,4 @@ func jsonOut(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
-}
-
-// FormatAddress is a small helper for the UI/tray.
-func FormatAddress(ip string, port int) string {
-	if strings.TrimSpace(ip) == "" {
-		return fmt.Sprintf(":%d", port)
-	}
-	return ip + ":" + strconv.Itoa(port)
 }

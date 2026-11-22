@@ -168,7 +168,6 @@ func main() {
 			Started:    started,
 			DataDir:    store.Dir(),
 			Auth:       store,
-			Launcher:   launcher,
 			Helper:     unlock.Available,
 			Startup:    startupSvc{},
 			Quit:       quit,
