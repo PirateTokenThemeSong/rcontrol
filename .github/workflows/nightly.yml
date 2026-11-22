@@ -1,0 +1,62 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/server/go.mod
+          cache-dependency-path: apps/server/go.sum
+
+      - name: Test server
+        working-directory: apps/server
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Build server (windows/amd64)
+        working-directory: apps/server
+        run: |
+          mkdir -p ../../dist
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o ../../dist/rcontrol-server.exe .
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o ../../dist/rcontrol-unlock.exe ./cmd/rcontrol-unlock
+          cd ../../dist
+          zip -9 rcontrol-server-windows-amd64.zip rcontrol-server.exe rcontrol-unlock.exe
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK
+        working-directory: apps/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../../dist/rcontrol-nightly.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rcontrol-nightly
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            dist/rcontrol-server-windows-amd64.zip
+            dist/rcontrol-nightly.apk

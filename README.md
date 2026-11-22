@@ -79,6 +79,25 @@ See [`protocol/PROTOCOL.md`](protocol/PROTOCOL.md). Summary:
   - Client → server JSON: `{"type":"power","action":"shutdown|reboot|sleep|lock"}`, `{"type":"quality","fps":5,"jpeg":70}`, `{"type":"launch","app":"steam"}`, `{"type":"windows"}`, `{"type":"focus","id":"…"}`, `{"type":"ping"}`
 - Health: `GET /health`
 
+## Releases & nightlies
+
+- **Release** — pushing a tag `v*` runs `.github/workflows/release.yml`: tests,
+  builds `rcontrol-server.exe` + `rcontrol-unlock.exe` (windows/amd64, zipped)
+  and the APK, then publishes them on the GitHub release.
+
+  ```
+  git tag v0.1.0
+  git push origin v0.1.0
+  ```
+
+- **Nightly** — `.github/workflows/nightly.yml` runs at 03:00 UTC (and on
+  demand): same builds, uploaded as the `rcontrol-nightly` workflow artifact
+  with 14-day retention. No release is created.
+
+The APK in both is **debug-signed** (no keystore in the repo), so installing
+over a build from another runner may require uninstalling first. Add a keystore
+plus secrets and a `signingConfig` when you want proper release signing.
+
 ## Repo layout / tooling
 
 - No JS toolchain at root — each app builds with its native toolchain.

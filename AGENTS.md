@@ -20,6 +20,8 @@ No cloud, no TLS in v1.
 - `protocol/PROTOCOL.md` — wire protocol; the source of truth. Update it with
   any endpoint or message change.
 - `brand/` — launcher PNGs (48–512) and the SVG source.
+- `.github/workflows/` — `release.yml` (tags `v*`) and `nightly.yml` (03:00 UTC
+  + manual). Both build the server for windows/amd64 and the debug APK.
 
 ## Build & test
 
