@@ -125,8 +125,15 @@ suspend fun pingServer(host: String, port: Int, timeoutMs: Long = 1500): Boolean
 
 // ---- lock screen ----
 
+/** Outcome of a remote unlock request. */
+sealed interface UnlockResult {
+    data object Ok : UnlockResult
+    data object Timeout : UnlockResult
+    data class Error(val message: String) : UnlockResult
+}
+
 /** POST /unlock — ask the helper to type the secret into the lock screen. */
-suspend fun unlockPc(host: String, port: Int, token: String, secret: String): String =
+suspend fun unlockPc(host: String, port: Int, token: String, secret: String): UnlockResult =
     withContext(Dispatchers.IO) {
         // Keep the UI honest: 10 s is enough for the helper to reveal the form,
         // type and press Enter.
@@ -135,20 +142,20 @@ suspend fun unlockPc(host: String, port: Int, token: String, secret: String): St
         val req = Request.Builder().url("http://$host:$port/unlock?token=$token").post(body).build()
         try {
             client.newCall(req).execute().use { resp ->
-                val text = resp.body?.string().orEmpty()
                 if (resp.isSuccessful) {
-                    "Unlock sent"
+                    UnlockResult.Ok
                 } else {
+                    val text = resp.body?.string().orEmpty()
                     val why = try {
                         JSONObject(text).optString("error", "HTTP ${resp.code}")
                     } catch (_: Exception) {
                         "HTTP ${resp.code}"
                     }
-                    "Unlock failed: $why"
+                    UnlockResult.Error(why)
                 }
             }
         } catch (_: java.io.IOException) {
-            "Unlock timed out after 10 s"
+            UnlockResult.Timeout
         }
     }
 
@@ -203,20 +210,18 @@ suspend fun fetchWindows(host: String, port: Int, token: String): List<RemoteWin
         }
     }
 
-/** POST /focus — brings one window to the front. Returns a human-readable result. */
+/** POST /focus — brings one window to the front. Returns null on success, else an error. */
 suspend fun focusWindow(
     host: String,
     port: Int,
     token: String,
     id: String,
-    title: String,
-): String = withContext(Dispatchers.IO) {
+): String? = withContext(Dispatchers.IO) {
     val client = OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build()
     val body = JSONObject().put("id", id).toString().toRequestBody(JSON_MEDIA)
     val req = Request.Builder().url("http://$host:$port/focus?token=$token").post(body).build()
     client.newCall(req).execute().use { resp ->
-        val text = resp.body?.string().orEmpty()
-        if (resp.isSuccessful) "Focused $title" else "Focus failed: HTTP ${resp.code} $text"
+        if (resp.isSuccessful) null else "HTTP ${resp.code} " + resp.body?.string().orEmpty()
     }
 }
 
@@ -240,21 +245,19 @@ suspend fun fetchApps(host: String, port: Int, token: String): List<RemoteApp> =
         }
     }
 
-/** POST /launch — returns a short human-readable result. */
+/** POST /launch — null on success, else an error. */
 suspend fun launchApp(
     host: String,
     port: Int,
     token: String,
     id: String,
-    label: String = id,
-): String =
+): String? =
     withContext(Dispatchers.IO) {
         val client = OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build()
         val body = JSONObject().put("app", id).toString().toRequestBody(JSON_MEDIA)
         val req = Request.Builder().url("http://$host:$port/launch?token=$token").post(body).build()
         client.newCall(req).execute().use { resp ->
-            val text = resp.body?.string().orEmpty()
-            if (resp.isSuccessful) "Launched $label" else "Failed ($label): HTTP ${resp.code} $text"
+            if (resp.isSuccessful) null else "HTTP ${resp.code} " + resp.body?.string().orEmpty()
         }
     }
 

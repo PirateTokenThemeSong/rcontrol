@@ -44,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.rcontrol.app.R
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.rcontrol.app.net.ServerInfo
@@ -102,9 +104,9 @@ fun HomeScreen(
         scope.launch {
             try {
                 servers = discoverServers()
-                if (servers.isEmpty()) msg = "No PCs answered — same Wi-Fi? UDP 7946 blocked?"
+                if (servers.isEmpty()) msg = ctx.getString(R.string.home_scan_empty)
             } catch (e: Exception) {
-                msg = e.message ?: "Scan failed"
+                msg = e.message ?: ctx.getString(R.string.home_scan_failed)
             } finally {
                 scanning = false
             }
@@ -127,9 +129,9 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("rcontrol", style = MaterialTheme.typography.displaySmall)
+                        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall)
                         Text(
-                            "Your PC, one tap away.",
+                            stringResource(R.string.home_tagline),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -137,7 +139,7 @@ fun HomeScreen(
                     IconButton(onClick = onSettings) {
                         Icon(
                             Icons.Default.Settings,
-                            contentDescription = "Settings",
+                            contentDescription = stringResource(R.string.action_settings),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -147,23 +149,23 @@ fun HomeScreen(
             // ---- the target ----
             item {
                 Panel {
-                    SectionTitle("Your PC", trailing = {
+                    SectionTitle(stringResource(R.string.section_your_pc), trailing = {
                         when (online) {
-                            true -> StatusPill("online", PillTone.Good)
-                            false -> StatusPill("offline", PillTone.Warn)
+                            true -> StatusPill(stringResource(R.string.status_online), PillTone.Good)
+                            false -> StatusPill(stringResource(R.string.status_offline), PillTone.Warn)
                             null -> if (settings.host.isNotBlank())
-                                StatusPill("saved", PillTone.Idle)
+                                StatusPill(stringResource(R.string.status_saved), PillTone.Idle)
                         }
                     })
 
                     if (settings.host.isBlank()) {
                         Text(
-                            "No PC set up yet",
+                            stringResource(R.string.home_no_pc),
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.padding(top = 10.dp)
                         )
                         Text(
-                            "Find it on your Wi-Fi, or add the address from Settings.",
+                            stringResource(R.string.home_no_pc_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -197,7 +199,7 @@ fun HomeScreen(
                         ) {
                             Icon(Icons.Default.Cast, contentDescription = null, modifier = Modifier.size(19.dp))
                             Text(
-                                if (settings.host.isBlank()) "Set up PC" else "Connect",
+                                stringResource(if (settings.host.isBlank()) R.string.action_set_up_pc else R.string.action_connect),
                                 modifier = Modifier.padding(start = 8.dp)
                             )
                         }
@@ -214,7 +216,7 @@ fun HomeScreen(
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Text("Wake", modifier = Modifier.padding(start = 8.dp))
+                            Text(stringResource(R.string.action_wake), modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }
@@ -223,7 +225,7 @@ fun HomeScreen(
             // ---- discovered PCs ----
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SectionTitle("On your network", trailing = {
+                    SectionTitle(stringResource(R.string.section_network), trailing = {
                         if (scanning) {
                             CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                         } else {
@@ -233,15 +235,16 @@ fun HomeScreen(
                                     contentDescription = null,
                                     modifier = Modifier.size(17.dp)
                                 )
-                                Text("Scan", modifier = Modifier.padding(start = 6.dp))
+                                Text(stringResource(R.string.action_scan), modifier = Modifier.padding(start = 6.dp))
                             }
                         }
                     })
 
                     if (servers.isEmpty()) {
                         Text(
-                            if (scanning) "Looking for PCs on this Wi-Fi…"
-                            else "Tap Scan to broadcast a discovery probe.",
+                            stringResource(
+                                if (scanning) R.string.home_scanning else R.string.home_scan_hint
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -324,7 +327,8 @@ private fun ServerRow(info: ServerInfo, selected: Boolean, onConnect: () -> Unit
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (info.auth) StatusPill("auth", PillTone.Good) else StatusPill("open", PillTone.Warn)
+            if (info.auth) StatusPill(stringResource(R.string.pill_auth), PillTone.Good)
+            else StatusPill(stringResource(R.string.pill_open), PillTone.Warn)
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,

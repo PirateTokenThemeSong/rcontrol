@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">rcontrol</string>
+
+    <!-- Home -->
+    <string name="home_tagline">Your PC, one tap away.</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_your_pc">Your PC</string>
+    <string name="status_online">online</string>
+    <string name="status_offline">offline</string>
+    <string name="status_saved">saved</string>
+    <string name="home_no_pc">No PC set up yet</string>
+    <string name="home_no_pc_hint">Find it on your Wi-Fi, or add the address from Settings.</string>
+    <string name="action_set_up_pc">Set up PC</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_wake">Wake</string>
+    <string name="section_network">On your network</string>
+    <string name="action_scan">Scan</string>
+    <string name="home_scanning">Looking for PCs on this Wi-Fi…</string>
+    <string name="home_scan_hint">Tap Scan to broadcast a discovery probe.</string>
+    <string name="home_scan_empty">No PCs answered — same Wi-Fi? UDP 7946 blocked?</string>
+    <string name="home_scan_failed">Scan failed</string>
+    <string name="pill_auth">auth</string>
+    <string name="pill_open">open</string>
+
+    <!-- Control -->
+    <string name="cd_pc_screen">PC screen</string>
+    <string name="cd_disconnect">Disconnect</string>
+    <string name="control_linking">Linking to your PC…</string>
+    <string name="control_no_frames">No frames — check token / port %1$s</string>
+    <string name="pairing_needed_title">This PC needs pairing</string>
+    <string name="pairing_needed_hint">Enter the PIN shown on the PC console in Settings.</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="confirm_title">Confirm %1$s?</string>
+    <string name="confirm_body">Your PC will %1$s in ~5 seconds. Save your work first.</string>
+    <string name="confirm_yes">Yes, %1$s</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="power_title">Power</string>
+    <string name="power_sleep">Sleep</string>
+    <string name="power_sleep_sub">standby</string>
+    <string name="power_lock">Lock</string>
+    <string name="power_lock_sub">secure</string>
+    <string name="power_display">Turn displays off</string>
+    <string name="power_display_sub">screens sleep, PC stays up</string>
+    <string name="power_shutdown">Shut down</string>
+    <string name="power_reboot">Reboot</string>
+    <string name="power_delay">5s delay</string>
+    <string name="lock_title">PC is locked</string>
+    <string name="lock_hint">Type the Windows PIN or password to unlock it remotely.</string>
+    <string name="field_pin_or_password">PIN or password</string>
+    <string name="action_unlock">Unlock</string>
+    <string name="pill_locked">locked</string>
+
+    <!-- Acks -->
+    <string name="ack_launched">Launched %1$s</string>
+    <string name="ack_launch_failed">Launch failed: %1$s</string>
+    <string name="ack_focused">Focused %1$s</string>
+    <string name="ack_focus_failed">Focus failed: %1$s</string>
+    <string name="ack_unlock_sent">Unlock sent</string>
+    <string name="ack_unlock_failed">Unlock failed: %1$s</string>
+    <string name="ack_unlock_timeout">Unlock timed out after 10 s</string>
+    <string name="pair_failed">Pairing failed: %1$s</string>
+    <string name="placeholder_method">POST</string>
+
+    <!-- Switch panel -->
+    <string name="pane_windows">Windows</string>
+    <string name="pane_apps">Apps</string>
+    <string name="cd_refresh_windows">Refresh windows</string>
+    <string name="search_apps_hint">Search apps on the PC</string>
+    <string name="action_clear">Clear</string>
+    <string name="show_all">Show all %1$d</string>
+    <string name="show_less">Show less</string>
+    <string name="windows_empty">No windows found — Windows PC only for now.</string>
+    <string name="apps_empty">No apps configured.</string>
+    <string name="apps_no_match">No apps match “%1$s”.</string>
+    <string name="pill_active">active</string>
+    <string name="pill_min">min</string>
+    <string name="cd_pin">Pin</string>
+    <string name="cd_unpin">Unpin</string>
+
+    <!-- Settings -->
+    <string name="section_connection">Connection</string>
+    <string name="field_pc_name">PC name</string>
+    <string name="placeholder_pc_name">optional, shown on Home</string>
+    <string name="field_address">Address</string>
+    <string name="placeholder_address">192.168.1.20</string>
+    <string name="field_port">Port</string>
+    <string name="section_pairing">Pairing</string>
+    <string name="field_pin">PIN (000-000)</string>
+    <string name="action_pair">Pair</string>
+    <string name="pairing_help">The PIN is shown on the PC (also in ~/.rcontrol/pin). Pairing stores a token on this phone — you never type it.</string>
+    <string name="paired_title">Paired</string>
+    <string name="paired_hint">Token stored on this phone.</string>
+    <string name="action_unpair">Unpair</string>
+    <string name="notice_paired">Paired.</string>
+    <string name="notice_unpaired">Unpaired — pair again with the PIN.</string>
+    <string name="pill_paired">paired</string>
+    <string name="section_stream">Stream</string>
+    <string name="stream_summary">%1$d fps · %2$d%%</string>
+    <string name="stream_fps">Frames per second</string>
+    <string name="stream_jpeg">JPEG quality</string>
+    <string name="stream_max_width">Max width</string>
+    <string name="stream_max_width_value">%1$d px</string>
+    <string name="stream_hint">Lower quality = smoother over weak Wi-Fi.</string>
+    <string name="section_wol">Wake on LAN</string>
+    <string name="field_mac">MAC address</string>
+    <string name="placeholder_mac">AA:BB:CC:DD:EE:FF</string>
+    <string name="field_broadcast">Broadcast</string>
+    <string name="wol_hint">The app sends the magic packet itself; your PC must allow WoL in the BIOS and NIC.</string>
+    <string name="section_custom_wake">Custom wake request</string>
+    <string name="custom_wake_hint">Fire an HTTP request at a router, Home Assistant or always-on Pi.</string>
+    <string name="field_method">Method</string>
+    <string name="field_url">URL</string>
+    <string name="placeholder_url">http://…</string>
+    <string name="field_headers">Headers (one per line)</string>
+    <string name="placeholder_headers">Authorization: Bearer …</string>
+    <string name="field_body">Body</string>
+    <string name="placeholder_body">{\"mac\":\"…\"}</string>
+    <string name="about">rcontrol 0.1.0 · LAN only, no cloud, no TLS in v1.</string>
+
+    <!-- Wake -->
+    <string name="wake_title">Wake</string>
+    <string name="cd_back">Back</string>
+    <string name="wake_heading">Wake %1$s</string>
+    <string name="wake_no_method">No wake method set up</string>
+    <string name="wake_no_method_hint">Add the PC\'s MAC address (or a custom HTTP wake request) in Settings.</string>
+    <string name="action_send_wake">Send wake signal</string>
+    <string name="wake_sending">Sending wake signal…</string>
+    <string name="wake_magic_sent">Magic packet sent.</string>
+    <string name="wake_http_sent">Wake request sent (HTTP %1$d).</string>
+    <string name="wake_waiting">Waiting for the server to answer…</string>
+    <string name="wake_waiting_tick">Waiting for the server… (%1$ds)</string>
+    <string name="wake_online">PC is online.</string>
+    <string name="wake_timeout">No answer after 5 min. Check that WoL is enabled in the BIOS/NIC.</string>
+    <string name="action_stop_waiting">Stop waiting</string>
+    <string name="wake_cancelled">Cancelled.</string>
+    <string name="wake_method_label">METHOD</string>
+    <string name="wake_magic_line">Magic packet → %1$s</string>
+    <string name="wake_broadcast_line">broadcast %1$s:%2$s</string>
+    <string name="wake_poll_hint">Then polls /health every 2.5 s for 5 min.</string>
+</resources>

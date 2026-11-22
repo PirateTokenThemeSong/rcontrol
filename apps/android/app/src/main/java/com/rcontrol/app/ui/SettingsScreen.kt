@@ -40,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.rcontrol.app.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.rcontrol.app.net.pairWithPin
@@ -74,10 +76,10 @@ fun SettingsScreen(onBack: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Settings", style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(R.string.action_settings), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -98,26 +100,26 @@ fun SettingsScreen(onBack: () -> Unit) {
             // ---- connection ----
             item {
                 Panel {
-                    SectionTitle("Connection", trailing = {
-                        if (s.token.isNotBlank()) StatusPill("paired", PillTone.Good)
+                    SectionTitle(stringResource(R.string.section_connection), trailing = {
+                        if (s.token.isNotBlank()) StatusPill(stringResource(R.string.pill_paired), PillTone.Good)
                     })
-                    SettingsField("PC name", s.pcName, "optional, shown on Home") { v ->
+                    SettingsField(stringResource(R.string.field_pc_name), s.pcName, stringResource(R.string.placeholder_pc_name)) { v ->
                         set { it.copy(pcName = v) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         SettingsField(
-                            "Address", s.host, "192.168.1.20",
+                            stringResource(R.string.field_address), s.host, stringResource(R.string.placeholder_address),
                             modifier = Modifier.weight(2.2f)
                         ) { v -> set { it.copy(host = v) } }
                         SettingsField(
-                            "Port", s.port, "",
+                            stringResource(R.string.field_port), s.port, "",
                             keyboard = KeyboardType.Number,
                             modifier = Modifier.weight(1f)
                         ) { v -> set { it.copy(port = v) } }
                     }
                     if (s.token.isBlank()) {
                         Text(
-                            "Pairing",
+                            stringResource(R.string.section_pairing),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 18.dp)
@@ -129,7 +131,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             OutlinedTextField(
                                 value = pin,
                                 onValueChange = { pin = it },
-                                label = { Text("PIN (000-000)") },
+                                label = { Text(stringResource(R.string.field_pin)) },
                                 leadingIcon = { Icon(Icons.Default.Shield, null) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(14.dp),
@@ -148,9 +150,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                                             val token = pairWithPin(s.host.trim(), s.portInt, pin.trim())
                                             set { it.copy(token = token) }
                                             pin = ""
-                                            notice = "Paired." to false
+                                            notice = ctx.getString(R.string.notice_paired) to false
                                         } catch (e: Exception) {
-                                            notice = (e.message ?: "pairing failed") to true
+                                            notice = ctx.getString(R.string.pair_failed, e.message ?: "") to true
                                         } finally {
                                             pairing = false
                                         }
@@ -164,12 +166,12 @@ fun SettingsScreen(onBack: () -> Unit) {
                                 if (pairing) {
                                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                                 } else {
-                                    Text("Pair")
+                                    Text(stringResource(R.string.action_pair))
                                 }
                             }
                         }
                         Text(
-                            "The PIN is shown on the PC (also in ~/.rcontrol/pin). Pairing stores a token on this phone — you never type it.",
+                            stringResource(R.string.pairing_help),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp)
@@ -181,9 +183,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text("Paired", style = MaterialTheme.typography.titleSmall)
+                                Text(stringResource(R.string.paired_title), style = MaterialTheme.typography.titleSmall)
                                 Text(
-                                    "Token stored on this phone.",
+                                    stringResource(R.string.paired_hint),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -191,10 +193,10 @@ fun SettingsScreen(onBack: () -> Unit) {
                             OutlinedButton(
                                 onClick = {
                                     set { it.copy(token = "") }
-                                    notice = "Unpaired — pair again with the PIN." to false
+                                    notice = ctx.getString(R.string.notice_unpaired) to false
                                 },
                                 shape = RoundedCornerShape(14.dp)
-                            ) { Text("Unpair") }
+                            ) { Text(stringResource(R.string.action_unpair)) }
                         }
                     }
 
@@ -213,14 +215,14 @@ fun SettingsScreen(onBack: () -> Unit) {
             // ---- streaming ----
             item {
                 Panel {
-                    SectionTitle("Stream", trailing = {
+                    SectionTitle(stringResource(R.string.section_stream), trailing = {
                         Text(
-                            "${s.fps} fps · ${s.jpeg}%",
+                            stringResource(R.string.stream_summary, s.fps, s.jpeg),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     })
-                    SliderRow("Frames per second", "${s.fps}") {
+                    SliderRow(stringResource(R.string.stream_fps), "${s.fps}") {
                         Slider(
                             value = s.fps.toFloat(),
                             onValueChange = { v -> set { it.copy(fps = v.roundToInt()) } },
@@ -228,7 +230,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             steps = 13
                         )
                     }
-                    SliderRow("JPEG quality", "${s.jpeg}") {
+                    SliderRow(stringResource(R.string.stream_jpeg), "${s.jpeg}") {
                         Slider(
                             value = s.jpeg.toFloat(),
                             onValueChange = { v -> set { it.copy(jpeg = v.roundToInt()) } },
@@ -236,7 +238,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             steps = 11
                         )
                     }
-                    SliderRow("Max width", "${s.maxWidth} px") {
+                    SliderRow(stringResource(R.string.stream_max_width), stringResource(R.string.stream_max_width_value, s.maxWidth)) {
                         Slider(
                             value = s.maxWidth.toFloat(),
                             onValueChange = { v -> set { it.copy(maxWidth = v.roundToInt()) } },
@@ -245,7 +247,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         )
                     }
                     Text(
-                        "Lower quality = smoother over weak Wi-Fi.",
+                        stringResource(R.string.stream_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -255,23 +257,23 @@ fun SettingsScreen(onBack: () -> Unit) {
             // ---- wake ----
             item {
                 Panel {
-                    SectionTitle("Wake on LAN")
-                    SettingsField("MAC address", s.mac, "AA:BB:CC:DD:EE:FF") { v ->
+                    SectionTitle(stringResource(R.string.section_wol))
+                    SettingsField(stringResource(R.string.field_mac), s.mac, stringResource(R.string.placeholder_mac)) { v ->
                         set { it.copy(mac = v) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         SettingsField(
-                            "Broadcast", s.broadcast, "",
+                            stringResource(R.string.field_broadcast), s.broadcast, "",
                             modifier = Modifier.weight(2f)
                         ) { v -> set { it.copy(broadcast = v) } }
                         SettingsField(
-                            "Port", s.wolPort, "",
+                            stringResource(R.string.field_port), s.wolPort, "",
                             keyboard = KeyboardType.Number,
                             modifier = Modifier.weight(1f)
                         ) { v -> set { it.copy(wolPort = v) } }
                     }
                     Text(
-                        "The app sends the magic packet itself; your PC must allow WoL in the BIOS and NIC.",
+                        stringResource(R.string.wol_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 10.dp)
@@ -288,7 +290,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
-                            SectionTitle("Custom wake request")
+                            SectionTitle(stringResource(R.string.section_custom_wake))
                         }
                         Switch(
                             checked = s.wakeHttpEnabled,
@@ -296,25 +298,25 @@ fun SettingsScreen(onBack: () -> Unit) {
                         )
                     }
                     Text(
-                        "Fire an HTTP request at a router, Home Assistant or always-on Pi.",
+                        stringResource(R.string.custom_wake_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     if (s.wakeHttpEnabled) {
-                        SettingsField("Method", s.wakeMethod, "POST") { v ->
+                        SettingsField(stringResource(R.string.field_method), s.wakeMethod, stringResource(R.string.placeholder_method)) { v ->
                             set { it.copy(wakeMethod = v) }
                         }
-                        SettingsField("URL", s.wakeUrl, "http://…") { v ->
+                        SettingsField(stringResource(R.string.field_url), s.wakeUrl, stringResource(R.string.placeholder_url)) { v ->
                             set { it.copy(wakeUrl = v) }
                         }
                         SettingsField(
-                            "Headers (one per line)", s.wakeHeaders, "Authorization: Bearer …",
+                            stringResource(R.string.field_headers), s.wakeHeaders, stringResource(R.string.placeholder_headers),
                             singleLine = false,
                             minLines = 2
                         ) { v -> set { it.copy(wakeHeaders = v) } }
                         SettingsField(
-                            "Body", s.wakeBody, "{\"mac\":\"…\"}",
+                            stringResource(R.string.field_body), s.wakeBody, stringResource(R.string.placeholder_body),
                             singleLine = false,
                             minLines = 3
                         ) { v -> set { it.copy(wakeBody = v) } }
@@ -325,7 +327,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             // ---- about ----
             item {
                 Text(
-                    "rcontrol 0.1.0 · LAN only, no cloud, no TLS in v1.",
+                    stringResource(R.string.about),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, top = 2.dp)

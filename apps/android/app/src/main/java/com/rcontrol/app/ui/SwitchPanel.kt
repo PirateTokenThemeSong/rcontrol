@@ -47,6 +47,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.rcontrol.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -123,13 +125,23 @@ fun SwitchLaunchPanel(
 
     fun focus(w: RemoteWindow) {
         scope.launch {
-            onAck(focusWindow(host, port, token, w.id, w.title))
+            val err = focusWindow(host, port, token, w.id)
+            onAck(
+                if (err == null) ctx.getString(R.string.ack_focused, w.title)
+                else ctx.getString(R.string.ack_focus_failed, err)
+            )
             windows = try { fetchWindows(host, port, token) } catch (_: Exception) { windows }
         }
     }
 
     fun launch(app: RemoteApp) {
-        scope.launch { onAck(launchApp(host, port, token, app.id, app.label)) }
+        scope.launch {
+            val err = launchApp(host, port, token, app.id)
+            onAck(
+                if (err == null) ctx.getString(R.string.ack_launched, app.label)
+                else ctx.getString(R.string.ack_launch_failed, err)
+            )
+        }
     }
 
     // Pinned apps first, then the allowlist; search results replace both.
@@ -164,7 +176,7 @@ fun SwitchLaunchPanel(
                         } else {
                             Icon(
                                 Icons.Default.Refresh,
-                                contentDescription = "Refresh windows",
+                                contentDescription = stringResource(R.string.cd_refresh_windows),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -177,7 +189,7 @@ fun SwitchLaunchPanel(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    placeholder = { Text("Search apps on the PC") },
+                    placeholder = { Text(stringResource(R.string.search_apps_hint)) },
                     leadingIcon = {
                         Icon(Icons.Default.Search, null, Modifier.size(18.dp))
                     },
@@ -185,7 +197,7 @@ fun SwitchLaunchPanel(
                         if (searching) {
                             CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 2.dp)
                         } else if (query.isNotEmpty()) {
-                            TextButton(onClick = { query = "" }) { Text("Clear") }
+                            TextButton(onClick = { query = "" }) { Text(stringResource(R.string.action_clear)) }
                         }
                     },
                     singleLine = true,
@@ -200,9 +212,9 @@ fun SwitchLaunchPanel(
             }
 
             when {
-                rows.isEmpty() && pane == Pane.Windows -> EmptyRow("No windows found — Windows PC only for now.")
+                rows.isEmpty() && pane == Pane.Windows -> EmptyRow(stringResource(R.string.windows_empty))
                 rows.isEmpty() && pane == Pane.Apps ->
-                    EmptyRow(if (query.isBlank()) "No apps configured." else "No apps match “$query”.")
+                    EmptyRow(if (query.isBlank()) stringResource(R.string.apps_empty) else stringResource(R.string.apps_no_match, query))
             }
 
             visible.forEachIndexed { i, item ->
@@ -234,7 +246,7 @@ fun SwitchLaunchPanel(
                         .fillMaxWidth()
                         .height(42.dp)
                 ) {
-                    Text(if (expanded) "Show less" else "Show all ${rows.size}")
+                    Text(if (expanded) stringResource(R.string.show_less) else stringResource(R.string.show_all, rows.size))
                 }
             }
         }
@@ -249,8 +261,8 @@ private fun Segmented(pane: Pane, onChange: (Pane) -> Unit) {
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        SegItem("Windows", pane == Pane.Windows) { onChange(Pane.Windows) }
-        SegItem("Apps", pane == Pane.Apps) { onChange(Pane.Apps) }
+        SegItem(stringResource(R.string.pane_windows), pane == Pane.Windows) { onChange(Pane.Windows) }
+        SegItem(stringResource(R.string.pane_apps), pane == Pane.Apps) { onChange(Pane.Apps) }
     }
 }
 
@@ -294,8 +306,8 @@ private fun WindowPick(host: String, port: Int, token: String, w: RemoteWindow, 
         title = w.title,
         trailing = {
             when {
-                w.active -> StatusPill("active", PillTone.Good)
-                w.minimized -> StatusPill("min", PillTone.Warn)
+                w.active -> StatusPill(stringResource(R.string.pill_active), PillTone.Good)
+                w.minimized -> StatusPill(stringResource(R.string.pill_min), PillTone.Warn)
             }
         }
     )
@@ -335,7 +347,7 @@ private fun AppPick(
             IconButton(onClick = onTogglePin, modifier = Modifier.size(30.dp)) {
                 Icon(
                     if (pinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
-                    contentDescription = if (pinned) "Unpin" else "Pin",
+                    contentDescription = stringResource(if (pinned) R.string.cd_unpin else R.string.cd_pin),
                     tint = if (pinned) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)

@@ -77,12 +77,15 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.rcontrol.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.rcontrol.app.net.PowerAction
 import com.rcontrol.app.net.RControlClient
 import com.rcontrol.app.net.unlockPc
+import com.rcontrol.app.net.UnlockResult
 import com.rcontrol.app.ui.components.PillTone
 import com.rcontrol.app.ui.components.Panel
 import com.rcontrol.app.ui.components.StatusPill
@@ -154,13 +157,13 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                 },
                 actions = {
                     if (client.locked.value) {
-                        StatusPill("locked", PillTone.Warn, Modifier.padding(end = 4.dp))
+                        StatusPill(stringResource(R.string.pill_locked), PillTone.Warn, Modifier.padding(end = 4.dp))
                     }
                     IconButton(onClick = {
                         client.disconnect()
                         onDisconnect()
                     }) {
-                        Icon(Icons.Default.LinkOff, contentDescription = "Disconnect")
+                        Icon(Icons.Default.LinkOff, contentDescription = stringResource(R.string.cd_disconnect))
                     }
                 }
             )
@@ -186,7 +189,7 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                         if (bmp != null) {
                             Image(
                                 bitmap = bmp.asImageBitmap(),
-                                contentDescription = "PC screen",
+                                contentDescription = stringResource(R.string.cd_pc_screen),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .aspectRatio(aspect),
@@ -211,8 +214,11 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                                         modifier = Modifier.alpha(if (linking) pulse else 1f)
                                     )
                                     Text(
-                                        if (linking) "Linking to your PC…"
-                                        else "No frames — check token / port ${session.port}",
+                                        stringResource(
+                                            if (linking) R.string.control_linking
+                                            else R.string.control_no_frames,
+                                            session.port
+                                        ),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -226,9 +232,9 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
             if (needsPairing) {
                 item {
                     Panel {
-                        Text("This PC needs pairing", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.pairing_needed_title), style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Enter the PIN shown on the PC console in Settings.",
+                            stringResource(R.string.pairing_needed_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -242,7 +248,7 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                                 .padding(top = 12.dp)
                         ) {
                             Icon(Icons.Default.Settings, null, Modifier.size(18.dp))
-                            Text("Open settings", modifier = Modifier.padding(start = 8.dp))
+                            Text(stringResource(R.string.action_open_settings), modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }
@@ -263,9 +269,9 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                                 modifier = Modifier.size(22.dp)
                             )
                             Column(Modifier.weight(1f)) {
-                                Text("PC is locked", style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.titleMedium)
                                 Text(
-                                    "Type the Windows PIN or password to unlock it remotely.",
+                                    stringResource(R.string.lock_hint),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(top = 2.dp)
@@ -275,7 +281,7 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                         OutlinedTextField(
                             value = secret,
                             onValueChange = { secret = it },
-                            label = { Text("PIN or password") },
+                            label = { Text(stringResource(R.string.field_pin_or_password)) },
                             singleLine = true,
                             enabled = !unlocking,
                             visualTransformation = PasswordVisualTransformation(),
@@ -289,12 +295,16 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                             onClick = {
                                 unlocking = true
                                 scope.launch {
-                                    client.lastAck.value = unlockPc(
+                                    client.lastAck.value = when (val r = unlockPc(
                                         session.host.trim(),
                                         session.port.toIntOrNull() ?: 7945,
                                         session.token.trim(),
                                         secret
-                                    )
+                                    )) {
+                                        is UnlockResult.Ok -> ctx.getString(R.string.ack_unlock_sent)
+                                        is UnlockResult.Timeout -> ctx.getString(R.string.ack_unlock_timeout)
+                                        is UnlockResult.Error -> ctx.getString(R.string.ack_unlock_failed, r.message)
+                                    }
                                     unlocking = false
                                 }
                             },
@@ -310,7 +320,7 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                                     strokeWidth = 2.dp
                                 )
                             } else {
-                                Text("Unlock")
+                                Text(stringResource(R.string.action_unlock))
                             }
                         }
                     }
@@ -359,8 +369,8 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
         AlertDialog(
             onDismissRequest = { confirm = null },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            title = { Text("Confirm ${action.wire}?") },
-            text = { Text("Your PC will ${action.wire} in ~5 seconds. Save your work first.") },
+            title = { Text(stringResource(R.string.confirm_title, action.wire)) },
+            text = { Text(stringResource(R.string.confirm_body, action.wire)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -368,10 +378,10 @@ fun ControlScreen(session: SessionState, onDisconnect: () -> Unit, onSettings: (
                         confirm = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Yes, ${action.wire}") }
+                ) { Text(stringResource(R.string.confirm_yes, action.wire)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirm = null }) { Text("Cancel") }
+                TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -400,7 +410,7 @@ private fun PowerMenu(onAction: (PowerAction) -> Unit) {
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    "Power",
+                    stringResource(R.string.power_title),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
@@ -417,15 +427,15 @@ private fun PowerMenu(onAction: (PowerAction) -> Unit) {
             onDismissRequest = { open = false },
             modifier = Modifier.width(280.dp)
         ) {
-            PowerEntry(Icons.Default.Bedtime, "Sleep", "standby") {
+            PowerEntry(Icons.Default.Bedtime, stringResource(R.string.power_sleep), stringResource(R.string.power_sleep_sub)) {
                 open = false
                 onAction(PowerAction.Sleep)
             }
-            PowerEntry(Icons.Default.Lock, "Lock", "secure") {
+            PowerEntry(Icons.Default.Lock, stringResource(R.string.power_lock), stringResource(R.string.power_lock_sub)) {
                 open = false
                 onAction(PowerAction.Lock)
             }
-            PowerEntry(Icons.Default.TvOff, "Turn displays off", "screens sleep, PC stays up") {
+            PowerEntry(Icons.Default.TvOff, stringResource(R.string.power_display), stringResource(R.string.power_display_sub)) {
                 open = false
                 onAction(PowerAction.Display)
             }
@@ -433,11 +443,11 @@ private fun PowerMenu(onAction: (PowerAction) -> Unit) {
                 color = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.padding(vertical = 6.dp)
             )
-            PowerEntry(Icons.Default.PowerSettingsNew, "Shut down", "5s delay", danger = true) {
+            PowerEntry(Icons.Default.PowerSettingsNew, stringResource(R.string.power_shutdown), stringResource(R.string.power_delay), danger = true) {
                 open = false
                 onAction(PowerAction.Shutdown)
             }
-            PowerEntry(Icons.Default.Refresh, "Reboot", "5s delay", danger = true) {
+            PowerEntry(Icons.Default.Refresh, stringResource(R.string.power_reboot), stringResource(R.string.power_delay), danger = true) {
                 open = false
                 onAction(PowerAction.Reboot)
             }

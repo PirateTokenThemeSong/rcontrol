@@ -39,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.rcontrol.app.R
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.rcontrol.app.net.WakeHttpConfig
@@ -76,12 +78,12 @@ fun WakeScreen(
         session.pcName = settings.pcName
         busy = true
         error = ""
-        status = "Sending wake signal…"
+        status = ctx.getString(R.string.wake_sending)
         job = scope.launch {
             try {
                 if (settings.mac.isNotBlank()) {
                     sendMagicPacket(settings.mac, settings.broadcast, settings.wolPortInt)
-                    status = "Magic packet sent."
+                    status = ctx.getString(R.string.wake_magic_sent)
                 }
                 if (settings.wakeHttpEnabled) {
                     val code = sendWakeHttp(
@@ -92,17 +94,17 @@ fun WakeScreen(
                             body = settings.wakeBody
                         )
                     )
-                    status = "Wake request sent (HTTP $code)."
+                    status = ctx.getString(R.string.wake_http_sent, code)
                 }
-                status = "Waiting for the server to answer…"
+                status = ctx.getString(R.string.wake_waiting)
                 val up = waitForServer(settings.host.trim(), settings.portInt, onTick = { s ->
-                    status = "Waiting for the server… (${s}s)"
+                    status = ctx.getString(R.string.wake_waiting_tick, s)
                 })
                 if (up) {
-                    status = "PC is online."
+                    status = ctx.getString(R.string.wake_online)
                     onOnline()
                 } else {
-                    error = "No answer after 5 min. Check that WoL is enabled in the BIOS/NIC."
+                    error = ctx.getString(R.string.wake_timeout)
                 }
             } catch (e: Exception) {
                 error = e.message.orEmpty()
@@ -116,10 +118,10 @@ fun WakeScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Wake", style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(R.string.wake_title), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -174,7 +176,7 @@ fun WakeScreen(
                         )
                     }
                     Text(
-                        "Wake ${settings.label}",
+                        stringResource(R.string.wake_heading, settings.label),
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 16.dp)
@@ -191,9 +193,9 @@ fun WakeScreen(
             if (!settings.hasWakeMethod) {
                 item {
                     Panel {
-                        Text("No wake method set up", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.wake_no_method), style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Add the PC's MAC address (or a custom HTTP wake request) in Settings.",
+                            stringResource(R.string.wake_no_method_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 6.dp)
@@ -205,7 +207,7 @@ fun WakeScreen(
                                 .fillMaxWidth()
                                 .height(50.dp)
                                 .padding(top = 12.dp)
-                        ) { Text("Open settings") }
+                        ) { Text(stringResource(R.string.action_open_settings)) }
                     }
                 }
             } else {
@@ -226,7 +228,7 @@ fun WakeScreen(
                             )
                         } else {
                             Icon(Icons.Default.PowerSettingsNew, contentDescription = null)
-                            Text("Send wake signal", modifier = Modifier.padding(start = 10.dp))
+                            Text(stringResource(R.string.action_send_wake), modifier = Modifier.padding(start = 10.dp))
                         }
                     }
                 }
@@ -237,18 +239,18 @@ fun WakeScreen(
                     Panel {
                         Column {
                             Text(
-                                "METHOD",
+                                stringResource(R.string.wake_method_label),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (settings.mac.isNotBlank()) {
                                 Text(
-                                    "Magic packet → ${settings.mac}",
+                                    stringResource(R.string.wake_magic_line, settings.mac),
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.padding(top = 8.dp)
                                 )
                                 Text(
-                                    "broadcast ${settings.broadcast}:${settings.wolPort}",
+                                    stringResource(R.string.wake_broadcast_line, settings.broadcast, settings.wolPort),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -262,7 +264,7 @@ fun WakeScreen(
                                 )
                             }
                             Text(
-                                "Then polls /health every 2.5 s for 5 min.",
+                                stringResource(R.string.wake_poll_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 8.dp)
@@ -303,13 +305,13 @@ fun WakeScreen(
                                     onClick = {
                                         job?.cancel()
                                         busy = false
-                                        status = "Cancelled."
+                                        status = ctx.getString(R.string.wake_cancelled)
                                     },
                                     shape = RoundedCornerShape(14.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(48.dp)
-                                ) { Text("Stop waiting") }
+                                ) { Text(stringResource(R.string.action_stop_waiting)) }
                             }
                         }
                     }
