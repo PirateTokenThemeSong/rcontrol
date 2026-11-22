@@ -166,7 +166,6 @@ func (d Deps) state() map[string]any {
 		"host":    d.HostName,
 		"version": d.Version,
 		"port":    d.Port,
-		"addr":    preferredIP(),
 		"uptime":  time.Since(d.Started).Round(time.Second).String(),
 		"pin":       d.Auth.PIN(),
 		"startup":   d.Startup != nil && d.Startup.Enabled(),
@@ -224,15 +223,6 @@ func addresses() []Addr {
 		}
 	}
 	return append(append(lan, tailscale...), other...)
-}
-
-// preferredIP is the address shown by default (the first LAN one).
-func preferredIP() string {
-	list := addresses()
-	if len(list) == 0 {
-		return ""
-	}
-	return list[0].IP
 }
 
 func jsonOut(w http.ResponseWriter, code int, v any) {
