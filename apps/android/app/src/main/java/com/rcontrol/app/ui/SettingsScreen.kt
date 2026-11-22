@@ -115,60 +115,86 @@ fun SettingsScreen(onBack: () -> Unit) {
                             modifier = Modifier.weight(1f)
                         ) { v -> set { it.copy(port = v) } }
                     }
-                    SettingsField("Token", s.token, "leave empty with --no-auth") { v ->
-                        set { it.copy(token = v) }
-                    }
-
-                    Text(
-                        "Pairing",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 18.dp)
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = pin,
-                            onValueChange = { pin = it },
-                            label = { Text("PIN (000-000)") },
-                            leadingIcon = { Icon(Icons.Default.Shield, null) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
-                            colors = settingsFieldColors(),
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(top = 10.dp)
+                    if (s.token.isBlank()) {
+                        Text(
+                            "Pairing",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 18.dp)
                         )
-                        OutlinedButton(
-                            enabled = pin.isNotBlank() && s.host.isNotBlank() && !pairing,
-                            onClick = {
-                                pairing = true
-                                notice = null
-                                scope.launch {
-                                    try {
-                                        val token = pairWithPin(s.host.trim(), s.portInt, pin.trim())
-                                        set { it.copy(token = token) }
-                                        pin = ""
-                                        notice = "Paired — token saved." to false
-                                    } catch (e: Exception) {
-                                        notice = (e.message ?: "pairing failed") to true
-                                    } finally {
-                                        pairing = false
-                                    }
-                                }
-                            },
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .height(56.dp)
-                                .padding(top = 10.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (pairing) {
-                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                Text("Pair")
+                            OutlinedTextField(
+                                value = pin,
+                                onValueChange = { pin = it },
+                                label = { Text("PIN (000-000)") },
+                                leadingIcon = { Icon(Icons.Default.Shield, null) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(14.dp),
+                                colors = settingsFieldColors(),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(top = 10.dp)
+                            )
+                            OutlinedButton(
+                                enabled = pin.isNotBlank() && s.host.isNotBlank() && !pairing,
+                                onClick = {
+                                    pairing = true
+                                    notice = null
+                                    scope.launch {
+                                        try {
+                                            val token = pairWithPin(s.host.trim(), s.portInt, pin.trim())
+                                            set { it.copy(token = token) }
+                                            pin = ""
+                                            notice = "Paired." to false
+                                        } catch (e: Exception) {
+                                            notice = (e.message ?: "pairing failed") to true
+                                        } finally {
+                                            pairing = false
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier
+                                    .height(56.dp)
+                                    .padding(top = 10.dp)
+                            ) {
+                                if (pairing) {
+                                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Text("Pair")
+                                }
                             }
+                        }
+                        Text(
+                            "The PIN is shown on the PC (also in ~/.rcontrol/pin). Pairing stores a token on this phone — you never type it.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.padding(top = 18.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Paired", style = MaterialTheme.typography.titleSmall)
+                                Text(
+                                    "Token stored on this phone.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    set { it.copy(token = "") }
+                                    notice = "Unpaired — pair again with the PIN." to false
+                                },
+                                shape = RoundedCornerShape(14.dp)
+                            ) { Text("Unpair") }
                         }
                     }
 
